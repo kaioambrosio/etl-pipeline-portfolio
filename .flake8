@@ -1,0 +1,12 @@
+[flake8]
+max-line-length = 100
+extend-ignore = E402, W503, E203
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist
+per-file-ignores =
+    scripts/*.py: E402

@@ -1,0 +1,53 @@
+# =============================================================================
+# ETL Pipeline - Dependências do Projeto
+# Autor: Kaio Ambrosio
+# Descrição: Pipeline ETL profissional (Excel/CSV → Python → PostgreSQL → Power BI)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Manipulação de Dados
+# -----------------------------------------------------------------------------
+pandas>=2.2.0                # Análise e manipulação de dados
+numpy>=1.26.0                # Operações numéricas
+openpyxl>=3.1.2              # Leitura/escrita de arquivos Excel (.xlsx)
+xlrd>=2.0.1                  # Leitura de arquivos Excel antigos (.xls)
+
+# -----------------------------------------------------------------------------
+# Banco de Dados
+# -----------------------------------------------------------------------------
+psycopg2-binary>=2.9.9       # Driver PostgreSQL para Python
+sqlalchemy>=2.0.25           # ORM e abstração de banco de dados
+
+# -----------------------------------------------------------------------------
+# Validação de Dados e Configuração
+# -----------------------------------------------------------------------------
+pydantic>=2.6.0              # Validação de dados com type hints
+pydantic-settings>=2.1.0     # Gerenciamento de configurações com Pydantic
+python-dotenv>=1.0.0         # Carregamento de variáveis de ambiente (.env)
+
+# -----------------------------------------------------------------------------
+# Logging e Monitoramento
+# -----------------------------------------------------------------------------
+loguru>=0.7.2                # Sistema de logging avançado e simples
+
+# -----------------------------------------------------------------------------
+# Utilitários
+# -----------------------------------------------------------------------------
+tqdm>=4.66.0                 # Barras de progresso
+python-dateutil>=2.8.2       # Manipulação avançada de datas
+pathlib2>=2.3.7;python_version<"3.4"  # Compatibilidade pathlib
+
+# -----------------------------------------------------------------------------
+# Desenvolvimento e Testes (opcional)
+# -----------------------------------------------------------------------------
+pytest>=8.0.0                # Framework de testes
+pytest-cov>=4.1.0            # Cobertura de código
+black>=24.1.0                # Formatação de código
+isort>=5.13.0                # Ordenação de imports
+flake8>=7.0.0                # Linting
+mypy>=1.8.0                  # Type checking
+
+# -----------------------------------------------------------------------------
+# Geração de Dados para Teste
+# -----------------------------------------------------------------------------
+faker>=22.0.0                # Geração de dados fictícios realistas
