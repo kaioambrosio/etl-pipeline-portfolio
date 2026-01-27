@@ -343,7 +343,7 @@ Após executar o pipeline, conecte o Power BI ao PostgreSQL para criar dashboard
 **Kaio Ambrosio**
 
 [![GitHub](https://img.shields.io/badge/GitHub-KaioAmbrosio-181717?style=flat&logo=github)](https://github.com/KaioAmbrosio)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Kaio%20Ambrosio-0077B5?style=flat&logo=linkedin)](https://linkedin.com/in/kaioambrosio)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Kaio%20Ambrosio-0077B5?style=flat&logo=linkedin)](https://www.linkedin.com/in/kaio-ambrosio-05833521a/)
 
 ---
 
