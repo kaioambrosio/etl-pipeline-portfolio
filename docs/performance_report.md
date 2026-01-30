@@ -1,82 +1,86 @@
-# ETL Pipeline - Relatório de Performance
+﻿# ETL Pipeline - Relatório de Performance
 
 ## Resumo Executivo
 
-O pipeline ETL foi testado com **100.000 registros** para validar sua escalabilidade e performance.
+O pipeline ETL foi testado com **5.000.000 transações** e **8.150.453 itens**, validando desempenho com grande volume de dados.
 
 ## Ambiente de Teste
 
 - **Sistema Operacional**: Windows 11
 - **Python**: 3.12.6
-- **PostgreSQL**: 17
+- **PostgreSQL**: 18.1
 - **Hardware**: Máquina local de desenvolvimento
 
 ## Resultados
 
-### Métricas de Tempo
+### Métricas de Tempo (Transações 5M)
 
 | Etapa | Tempo | % do Total |
 |-------|-------|------------|
-| Extração | ~0.5s | 2.2% |
-| Transformação | ~1.0s | 4.5% |
-| Carga (Load) | 21.65s | 93.3% |
-| **Total** | **22.34s** | **100%** |
+| Extração | 25s | 2,0% |
+| Transformação | 19s | 1,5% |
+| Carga (Load) | 1211,96s | 96,5% |
+| **Total** | **1255,57s (~20m56s)** | **100%** |
 
-### Taxa de Processamento
+### Carga de Itens (transacao_itens)
 
-- **Registros processados**: 100.000
-- **Taxa geral**: ~4.476 registros/segundo
-- **Taxa de carga**: ~4.619 registros/segundo
+- **Registros**: 8.150.453
+- **Tempo**: ~756s (~12m36s)
+- **Taxa**: ~10.781 itens/seg
+
+### Pipeline completo
+
+- **Arquivos processados**: 3 (catálogo, transações, itens)
+- **Tempo total**: 2014,90s (~33m35s)
+
+### Taxa de Processamento (Transações)
+
+- **Registros processados**: 5.000.000
+- **Taxa geral (ETL transações)**: ~3.982 transações/seg
+- **Taxa de carga (transações)**: ~4.126 transações/seg
 
 ### Distribuição dos Dados
 
-#### Por Status de Pagamento
+#### Por Status de Pagamento (transações)
+
 | Status | Quantidade | Percentual | Valor Total |
 |--------|------------|------------|-------------|
-| CANCELADO | 39.978 | 40% | R$ 9.154.499.342 |
-| PENDENTE | 39.818 | 40% | R$ 9.124.903.881 |
-| PAGO | 20.204 | 20% | R$ 4.658.870.788 |
+| PAGO | 3.029.360 | 60,6% | R$ 6.258.013.714,01 |
+| PENDENTE | 929.366 | 18,6% | R$ 1.919.455.125,15 |
+| ATRASADO | 487.526 | 9,8% | R$ 1.035.929.673,38 |
+| CANCELADO | 359.933 | 7,2% | R$ 788.596.413,21 |
+| ERRO | 193.815 | 3,9% | R$ 413.798.658,97 |
 
-#### Por Categoria
+#### Por Categoria (transações)
+
 | Categoria | Quantidade |
 |-----------|------------|
-| Acessórios | 20.244 |
-| Eletrônicos | 20.118 |
-| Periféricos | 19.911 |
-| Componentes | 19.906 |
-| Informática | 19.821 |
+| Componentes | 1.382.182 |
+| Acessórios | 981.875 |
+| Periféricos | 954.052 |
+| Eletrônicos | 911.621 |
+| Informática | 770.270 |
 
 ## Análise
 
 ### Pontos Fortes
 
-1. **Extração Rápida**: A leitura do arquivo CSV de 7.78 MB foi realizada em menos de 1 segundo
-2. **Transformação Eficiente**: O processamento de dados (limpeza, validação, transformação) foi extremamente rápido
-3. **Escalabilidade**: O pipeline manteve performance linear com o aumento de dados
+1. **Extração e transformação rápidas**: Mesmo com 5M de registros, as etapas de leitura e transformação foram concluídas em menos de 1 minuto.
+2. **Carga em lote eficiente**: O bulk insert manteve boa taxa de ingestão para o volume de dados.
+3. **Escalabilidade**: O pipeline manteve comportamento estável em volume grande.
 
 ### Gargalos Identificados
 
-1. **Carga no Banco**: 93% do tempo é gasto na inserção no PostgreSQL
-   - Isso é esperado devido às operações de I/O
-   - Pode ser otimizado com:
-     - Bulk insert nativo (COPY)
-     - Particionamento de tabelas
-     - Conexões pooling
-
-## Projeções
-
-Com base nos testes realizados:
-
-| Volume | Tempo Estimado |
-|--------|----------------|
-| 100.000 | 22s |
-| 500.000 | ~2 min |
-| 1.000.000 | ~4 min |
+1. **Carga no banco**: A etapa de inserção ainda domina o tempo total (~96%).
+   - Possíveis otimizações futuras:
+     - COPY nativo do PostgreSQL
+     - Particionamento de tabelas por data
+     - Ajustes de `work_mem` e `maintenance_work_mem`
 
 ## Conclusão
 
-O pipeline ETL demonstra **performance adequada** para o caso de uso proposto (portfólio e demonstração). A arquitetura é escalável e pode ser otimizada conforme necessário para volumes maiores de dados.
+O pipeline ETL apresenta **performance sólida** para um portfólio com grande volume (5M transações + 8,1M itens), com resultados consistentes e métricas realistas para avaliação.
 
 ---
-*Relatório gerado em: 26/01/2026*
+*Relatório gerado em: 30/01/2026*
 *Autor: Kaio Ambrosio*
