@@ -1,50 +1,48 @@
-# 🔄 ETL Pipeline - Portfolio Project
+﻿# 🔄 ETL Pipeline - Projeto de Portfólio
 
 [![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791.svg)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-**Pipeline ETL profissional para processamento de dados financeiros**
-
-```
-Excel/CSV  →  Python (Pandas)  →  PostgreSQL  →  Power BI
-```
+Pipeline ETL profissional para processamento de transações financeiras com **5M de registros**, catálogo de produtos e itens por pedido.
 
 ---
 
 ## 📋 Índice
 
 - [Sobre o Projeto](#-sobre-o-projeto)
-- [Tecnologias](#-tecnologias)
 - [Arquitetura](#-arquitetura)
+- [Tecnologias](#-tecnologias)
 - [Instalação](#-instalação)
+- [Variáveis de Ambiente](#-variáveis-de-ambiente)
 - [Como Usar](#-como-usar)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Modo COPY (alta performance)](#-modo-copy-alta-performance)
 - [Modelagem de Dados](#-modelagem-de-dados)
-- [Funcionalidades](#-funcionalidades)
+- [Logs e Monitoramento](#-logs-e-monitoramento)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
 - [Autor](#-autor)
 
 ---
 
 ## 🎯 Sobre o Projeto
 
-Este projeto demonstra a construção de um **pipeline ETL completo e profissional** aplicado a um cenário real de negócio. O objetivo é transformar dados brutos de transações financeiras em informação confiável e visualmente analisável.
+Este projeto demonstra a construção de um **pipeline ETL completo e profissional** aplicado a um cenário real de negócio. O objetivo é transformar dados brutos (CSV/Excel) em **informação confiável e analisável**, com foco em **volume, consistência e performance**.
 
 ### Objetivos
 
-- ✅ Demonstrar domínio em **Python aplicado a dados**
-- ✅ Evidenciar conhecimento em **SQL e modelagem relacional**
-- ✅ Aplicar conceitos de **automação e logging**
-- ✅ Criar um projeto **facilmente explicável em entrevistas**
+- Demonstrar domínio em **Python aplicado a dados**
+- Evidenciar conhecimento em **SQL e modelagem relacional**
+- Aplicar conceitos de **automação, logging e rastreabilidade**
+- Entregar um projeto **claro para avaliação técnica e portfólio**
 
-### Cenário de Negócio
+---
 
-Processamento de transações financeiras (vendas/cobrança) com:
-- Ingestão de múltiplos arquivos CSV/Excel
-- Tratamento e padronização de dados
-- Persistência em banco relacional
-- Visualização em dashboards analíticos
+## 🏗 Arquitetura
+
+```
+CSV/Excel → Python (Pandas) → PostgreSQL → API FastAPI → Dashboard / Power BI
+```
 
 ---
 
@@ -52,43 +50,14 @@ Processamento de transações financeiras (vendas/cobrança) com:
 
 | Categoria | Tecnologia | Uso |
 |-----------|------------|-----|
-| **Linguagem** | Python 3.12+ | Motor de processamento |
-| **Dados** | Pandas, NumPy | Manipulação e análise |
-| **Banco** | PostgreSQL | Persistência relacional |
-| **ORM** | SQLAlchemy | Abstração de banco |
-| **Validação** | Pydantic | Validação de dados |
-| **Logging** | Loguru | Sistema de logs |
-| **Visualização** | Power BI | Dashboards analíticos |
-| **Testes** | Pytest | Testes automatizados |
-
----
-
-## 🏗 Arquitetura
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        ETL PIPELINE                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   ┌──────────┐    ┌──────────────┐    ┌───────────────────┐    │
-│   │  SOURCE  │    │   EXTRACT    │    │    TRANSFORM      │    │
-│   │──────────│    │──────────────│    │───────────────────│    │
-│   │ CSV      │───▶│ Leitura      │───▶│ Padronização      │    │
-│   │ Excel    │    │ Validação    │    │ Limpeza           │    │
-│   │ (.xlsx)  │    │ Hash MD5     │    │ Campos derivados  │    │
-│   └──────────┘    └──────────────┘    └─────────┬─────────┘    │
-│                                                 │               │
-│                                                 ▼               │
-│   ┌──────────┐    ┌──────────────┐    ┌───────────────────┐    │
-│   │  OUTPUT  │    │   CONSUME    │    │      LOAD         │    │
-│   │──────────│    │──────────────│    │───────────────────│    │
-│   │ Power BI │◀───│ Views SQL    │◀───│ Bulk Insert       │    │
-│   │ Reports  │    │ Agregações   │    │ Controle duplicatas│   │
-│   └──────────┘    └──────────────┘    │ Logging           │    │
-│                                       └───────────────────┘    │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+| Linguagem | Python 3.12+ | Motor de processamento |
+| Dados | Pandas, NumPy | Transformação e validação |
+| Banco | PostgreSQL | Persistência relacional |
+| ORM | SQLAlchemy | Abstração de banco |
+| API | FastAPI | Camada de consulta |
+| Logging | Loguru | Logs estruturados |
+| Visualização | React + Power BI | Dashboard e BI |
+| Testes | Pytest | Testes automatizados |
 
 ---
 
@@ -100,7 +69,7 @@ Processamento de transações financeiras (vendas/cobrança) com:
 - PostgreSQL 15 ou superior
 - Git
 
-### Passo a Passo
+### Passo a passo
 
 1. **Clone o repositório**
 ```bash
@@ -126,287 +95,108 @@ pip install -r requirements.txt
 
 4. **Configure as variáveis de ambiente**
 ```bash
-# Copie o arquivo de exemplo
 cp .env.example .env
-
-# Edite o arquivo .env com suas configurações
 ```
 
-5. **Configure o banco de dados PostgreSQL**
-```sql
--- Crie o banco de dados
-CREATE DATABASE etl_portfolio;
-
--- Execute schema + views (recomendado para BI)
+5. **Configure o banco de dados**
+```bash
 psql -d etl_portfolio -f sql/setup.sql
+psql -d etl_portfolio -f sql/optimizations.sql
 ```
 
 ---
 
-## 📖 Como Usar
+## 🔧 Variáveis de Ambiente
 
-### Gerar Dados de Exemplo
+`.env` (ETL/API):
+
+- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+- `ETL_USE_COPY` (true/false) – habilita carga via COPY
+- `ETL_COPY_THRESHOLD` (ex: 200000) – mínimo de linhas para usar COPY
+- `API_CORS_ORIGINS` (opcional)
+- `API_SNAPSHOT_LIMIT` (opcional)
+
+---
+
+## 📦 Como Usar
+
+### Gerar dados de exemplo
 
 ```bash
-# Gera 1000 registros de exemplo
 python scripts/main.py --generate-sample
-
-# Gera quantidade específica
-python scripts/main.py -g -n 5000
+python scripts/main.py
 ```
 
-### Gerar Dados Realistas (Portfólio)
+### Gerar dados realistas (portfólio)
 
 ```bash
 python scripts/generate_portfolio_data.py --rows 5000000 --years 5
 python scripts/main.py
 ```
 
-Gera três CSVs (catálogo, transações e itens) com distribuição sazonal,
-variação por dia da semana e nomes acentuados em pt-BR.
+Gera **catálogo, transações e itens**, com sazonalidade, variação por dia da semana e nomes em pt-BR. As datas são limitadas aos últimos 5 anos (sem datas futuras).
 
-### Executar o Pipeline
+---
 
-```bash
-# Processa todos os arquivos em data/raw
-python scripts/main.py
+## ⚡ Modo COPY (alta performance)
 
-# Processa arquivo específico
-python scripts/main.py data/raw/transacoes.csv
+Para volumes grandes, o ETL pode carregar dados via **COPY nativo** do PostgreSQL:
+
+```env
+ETL_USE_COPY=true
+ETL_COPY_THRESHOLD=200000
 ```
 
-### Exemplo de Saída
+- `transacoes` são carregadas via arquivo temporário CSV + COPY.
+- `transacao_itens` usa staging table + COPY e join com `produtos`.
+- Para o benchmark com 5M, veja: `docs/performance_report.md`.
 
-```
-============================================================
-🚀 INICIANDO PIPELINE ETL
-Data/Hora: 2024-01-25 10:30:00
-============================================================
-Arquivos a processar: 1
+---
 
-📁 Arquivo 1/1: transacoes_exemplo.csv
-----------------------------------------
-📥 ETAPA 1: Extração
-✓ Extraídos 1000 registros
-🔄 ETAPA 2: Transformação
-✓ Transformados: 1000 → 987 registros
-📤 ETAPA 3: Carga
-✓ Carregados: 987 inseridos, 0 ignorados
-----------------------------------------
-✓ Arquivo processado com sucesso em 2.34s
+## 🧱 Modelagem de Dados
 
-============================================================
-📊 RESUMO DO PIPELINE
-============================================================
-Arquivos processados: 1/1
-Total de registros extraídos: 1000
-Total de registros carregados: 987
-Tempo total: 2.34s
-============================================================
-✅ Pipeline concluído com sucesso!
-```
+Tabelas principais:
+
+- `categorias`
+- `produtos`
+- `transacoes`
+- `transacao_itens`
+- `logs_etl`
+- `arquivos_processados`
+
+Status de pagamento padronizados: **PAGO, PENDENTE, CANCELADO, ATRASADO, ERRO**.
+
+---
+
+## 📝 Logs e Monitoramento
+
+- Logs gerais em `logs/etl.log`
+- Registro de execução em `logs_etl`
+- Controle de arquivos processados em `arquivos_processados`
 
 ---
 
 ## 📁 Estrutura do Projeto
 
 ```
-etl-pipeline-portfolio/
-│
-├── 📂 config/                    # Configurações
-│   ├── __init__.py
-│   └── settings.py               # Gerenciamento de configurações
-│
-├── 📂 data/                      # Dados
-│   ├── raw/                      # Dados brutos (entrada)
-│   └── processed/                # Dados processados
-│
-├── 📂 scripts/                   # Scripts ETL
-│   ├── __init__.py
-│   ├── extract.py                # Módulo de extração
-│   ├── transform.py              # Módulo de transformação
-│   ├── load.py                   # Módulo de carga
-│   ├── models.py                 # Modelos SQLAlchemy
-│   ├── main.py                   # Orquestrador principal
-│   ├── generate_portfolio_data.py# Gerador de dados realistas
-│   └── generate_skewed_data.py   # Gerador de dados enviesados (teste)
-│
-├── 📂 sql/                       # Scripts SQL
-│   ├── schema.sql                # Schema do banco de dados
-│   ├── views_powerbi.sql         # Views para BI
-│   ├── optimizations.sql         # Índices e otimizações
-│   └── setup.sql                 # Schema + views (atalho)
-│
-├── 📂 api/                       # API FastAPI (dashboard)
-├── 📂 dashboard/                 # Dashboard React
-│
-├── 📂 logs/                      # Logs de execução
-│   └── etl.log
-│
-├── 📂 tests/                     # Testes automatizados
-│   └── __init__.py
-│
-├── .env                          # Variáveis de ambiente (não versionado)
-├── .env.example                  # Exemplo de variáveis
-├── .gitignore                    # Arquivos ignorados pelo Git
-├── requirements.txt              # Dependências Python
-└── README.md                     # Este arquivo
+ETL/
+├── api/                       # API FastAPI
+├── config/                    # Configurações
+├── data/                      # CSVs brutos e processados
+├── dashboard/                 # Front-end React
+├── docs/                      # Documentação e relatórios
+├── logs/                      # Logs do ETL
+├── scripts/                   # ETL, geradores e utilitários
+├── sql/                       # Schema, views e otimizações
+├── tests/                     # Testes automatizados
+├── .env.example               # Exemplo de variáveis
+├── README.md                  # Visão geral
+└── README_ETL.md              # Detalhes do ETL
 ```
 
 ---
 
-## 🗃 Modelagem de Dados
+## 👤 Autor
 
-### Diagrama ER
-
-```
-┌─────────────────────┐     ┌─────────────────────┐
-│     transacoes      │     │      logs_etl       │
-├─────────────────────┤     ├─────────────────────┤
-│ id (PK)             │     │ id_log (PK)         │
-│ id_transacao (UK)   │     │ data_execucao       │
-│ data_transacao      │     │ arquivo_processado  │
-│ cliente             │     │ qtd_registros_*     │
-│ produto             │     │ status_execucao     │
-│ categoria           │     │ tempo_execucao_seg  │
-│ valor               │     │ mensagem_erro       │
-│ status_pagamento    │     │ detalhes (JSON)     │
-│ data_pagamento      │     └─────────────────────┘
-│ ano_transacao       │
-│ mes_transacao       │     ┌─────────────────────┐
-│ dia_semana          │     │ arquivos_processados│
-│ trimestre           │     ├─────────────────────┤
-│ arquivo_origem      │     │ id (PK)             │
-│ data_processamento  │     │ nome_arquivo        │
-└─────────────────────┘     │ hash_arquivo        │
-                            │ data_processamento  │
-                            │ id_log_etl (FK)     │
-                            └─────────────────────┘
-
-┌─────────────────────┐     ┌─────────────────────┐
-│     categorias      │     │      produtos       │
-├─────────────────────┤     ├─────────────────────┤
-│ id (PK)             │◀──┐ │ id (PK)             │
-│ nome (UK)           │   └▶│ categoria_id (FK)   │
-│ descricao           │     │ nome (UK)           │
-└─────────────────────┘     │ descricao           │
-                             │ preco_base          │
-                             │ preco_min           │
-                             │ preco_max           │
-                             │ ativo               │
-                             └─────────────────────┘
-
-┌─────────────────────┐
-│   transacao_itens   │
-├─────────────────────┤
-│ id (PK)             │
-│ id_transacao (FK)   ─────────▶ transacoes.id_transacao
-│ produto_id (FK)     ─────────▶ produtos.id
-│ quantidade          │
-│ valor_unitario      │
-│ valor_total         │
-└─────────────────────┘
-```
-
-### Views Analíticas
-
-As views abaixo são criadas por `sql/views_powerbi.sql`:
-
-- **`vw_fato_transacoes`**: Tabela fato com dimensões e métricas
-- **`vw_dim_calendario`**: Dimensão de calendário
-- **`vw_dim_produto`**: Dimensão de produtos
-- **`vw_kpi_resumo`**: KPIs principais
-- **`vw_analise_mensal`**: Tendência mensal
-- **`vw_top_clientes`**: Ranking de clientes
-- **`vw_top_produtos`**: Ranking de produtos
-- **`vw_analise_categoria`**: Participação por categoria
-- **`vw_resumo_transacoes`**: Agregação por período e categoria
-- **`vw_status_etl`**: Monitoramento diário do pipeline
-
----
-
-## ✨ Funcionalidades
-
-### Extração (Extract)
-- ✅ Leitura de arquivos CSV e Excel (.xlsx, .xls)
-- ✅ Detecção automática de encoding
-- ✅ Validação de estrutura obrigatória
-- ✅ Cálculo de hash MD5 para controle
-
-### Transformação (Transform)
-- ✅ Padronização de nomes de colunas (snake_case)
-- ✅ Conversão de tipos de dados
-- ✅ Tratamento de valores nulos
-- ✅ Normalização de status de pagamento
-- ✅ Criação de campos derivados (ano, mês, trimestre)
-- ✅ Remoção de duplicatas
-- ✅ Validação de qualidade dos dados
-
-### Carga (Load)
-- ✅ Criação automática de tabelas
-- ✅ Inserção em lote (bulk insert)
-- ✅ Carga de catálogo de produtos e itens de transação
-- ✅ Controle de duplicatas (upsert)
-- ✅ Rastreamento de arquivos processados
-- ✅ Logging completo de execução
-
-### Infraestrutura
-- ✅ Configuração via variáveis de ambiente
-- ✅ Sistema de logging rotativo
-- ✅ Tratamento de erros robusto
-- ✅ Código modular e testável
-
----
-
-## 📊 Power BI
-
-Após executar o pipeline, conecte o Power BI ao PostgreSQL para criar dashboards.
-
-### Conexão Rápida
-
-1. **Power BI Desktop** → **Obter Dados** → **PostgreSQL**
-2. **Servidor**: `localhost` | **Banco**: `etl_portfolio`
-3. Selecione as views otimizadas
-
-### Views Disponíveis
-
-| View | Descrição |
-|------|-----------|
-| `vw_fato_transacoes` | Tabela fato principal com todas as dimensões |
-| `vw_kpi_resumo` | KPIs para cards do dashboard |
-| `vw_analise_mensal` | Dados para gráficos de tendência |
-| `vw_top_clientes` | Ranking de clientes |
-| `vw_top_produtos` | Ranking de produtos por valor/quantidade |
-| `vw_analise_categoria` | Participação por categoria |
-| `vw_resumo_transacoes` | Resumo agregado por período |
-
-### Dashboards Sugeridos
-
-- **Executivo**: KPIs, tendência mensal, distribuição por status
-- **Vendas**: Top produtos, análise por categoria, ticket médio
-- **Monitoramento**: Saúde do pipeline, logs de execução
-
-📖 **Guia completo**: [docs/powerbi_connection_guide.md](docs/powerbi_connection_guide.md)
-
----
-
-## 👨‍💻 Autor
-
-**Kaio Ambrosio**
-
-[![GitHub](https://img.shields.io/badge/GitHub-KaioAmbrosio-181717?style=flat&logo=github)](https://github.com/KaioAmbrosio)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Kaio%20Ambrosio-0077B5?style=flat&logo=linkedin)](https://www.linkedin.com/in/kaio-ambrosio-05833521a/)
-
----
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
----
-
-<div align="center">
-
-**⭐ Se este projeto foi útil, considere dar uma estrela!**
-
-</div>
+**Kaio Ambrosio**  
+GitHub: https://github.com/KaioAmbrosio

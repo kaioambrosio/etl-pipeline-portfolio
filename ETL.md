@@ -1,245 +1,157 @@
-# PRD – Product Requirements Document
-## Projeto ETL Integrado de Dados
-**Excel / CSV → Python → PostgreSQL → Power BI**
+﻿# PRD – ETL Portfólio Integrado
+
+**Excel/CSV → Python → PostgreSQL → API → Dashboard/Power BI**
 
 ---
 
-## 1. Visão Geral do Projeto
+## 1. Visão Geral
 
 ### 1.1 Contexto
-Este projeto tem como objetivo demonstrar, de forma prática e profissional, a construção de um **pipeline de dados completo (ETL)** aplicado a um cenário real de negócio. O foco é transformar dados brutos (Excel/CSV) em **informação confiável e visualmente analisável**, utilizando Python como motor de processamento, PostgreSQL como base relacional e Power BI como camada analítica.
+Este projeto demonstra, de forma prática e profissional, a construção de um **pipeline de dados completo (ETL)** aplicado a um cenário real de negócio. O foco é transformar dados brutos em informação confiável e analisável, com desempenho adequado para grandes volumes.
 
-O projeto foi concebido para **portfólio profissional**, alinhado a vagas de **Dados, BI, Automação e Engenharia Analítica**, com ênfase em boas práticas, organização e clareza.
+### 1.2 Propósito
+Servir como **portfólio técnico** para vagas de Dados, BI e Engenharia Analítica, evidenciando organização, qualidade de código, documentação e resultados mensuráveis.
 
 ---
 
 ## 2. Objetivos
 
-### 2.1 Objetivo Principal
+### 2.1 Objetivo principal
 Construir um pipeline ETL robusto, reproduzível e documentado, capaz de:
-- Ingerir dados brutos
-- Tratar e padronizar informações
+- Ingerir dados brutos (CSV/Excel)
+- Padronizar e validar informações
 - Persistir dados em banco relacional
-- Disponibilizar análises via Power BI
+- Disponibilizar métricas via API e dashboard
 
-### 2.2 Objetivos Secundários
+### 2.2 Objetivos secundários
 - Demonstrar domínio de Python aplicado a dados
 - Evidenciar conhecimento em SQL e modelagem relacional
-- Aplicar conceitos de automação e logging
-- Criar um projeto facilmente explicável em entrevistas
+- Aplicar logging, rastreabilidade e reprocessamento controlado
+- Entregar um projeto claro para avaliação técnica
 
 ---
 
-## 3. Escopo do Projeto
+## 3. Escopo
 
-### 3.1 Dentro do Escopo
-- ETL em Python
-- Banco de dados PostgreSQL local
-- Modelagem relacional simples
-- Dashboards analíticos no Power BI
-- Documentação técnica (README + PRD)
+### 3.1 Dentro do escopo
+- ETL em Python (extração, transformação, carga)
+- PostgreSQL local
+- API FastAPI para filtros e métricas
+- Dashboard React para visualização
+- Views para Power BI
+- Relatório de performance
 
-### 3.2 Fora do Escopo
-- Interface web
+### 3.2 Fora do escopo
 - Deploy em cloud
 - Autenticação de usuários
+- Monitoramento em produção
 - Machine Learning
 
 ---
 
-## 4. Público-Alvo (Stakeholders)
+## 4. Dataset e Domínio de Negócio
 
-- Recrutadores técnicos
-- Gestores de dados / BI
-- Tech Leads
-- O próprio desenvolvedor (como base evolutiva)
+### 4.1 Tema
+Transações financeiras de vendas/cobrança (dados simulados).
 
----
+### 4.2 Volume-alvo
+- **5.000.000 transações**
+- **8.150.000+ itens**
+- **Catálogo com ~75 produtos**
+- Período de **5 anos**, sem datas futuras
 
-## 5. Dataset e Domínio de Negócio
-
-### 5.1 Tema do Dataset
-**Financeiro / Vendas / Cobrança** (dados simulados ou públicos)
-
-### 5.2 Campos Esperados
-- id_transacao
-- data_transacao
-- cliente
-- produto
-- categoria
-- valor
-- status_pagamento
-- data_pagamento (opcional)
+### 4.3 Status de pagamento
+- PAGO
+- PENDENTE
+- CANCELADO
+- ATRASADO
+- ERRO (raro, para simulação de inconsistências)
 
 ---
 
-## 6. Arquitetura da Solução
+## 5. Arquitetura da Solução
 
 ```
-┌────────────┐
-│ Excel/CSV │
-└─────┬──────┘
-      ↓
-┌────────────┐
-│  Python    │  ← ETL (pandas)
-└─────┬──────┘
-      ↓
-┌────────────┐
-│ PostgreSQL │  ← Persistência
-└─────┬──────┘
-      ↓
-┌────────────┐
-│ Power BI   │  ← Visualização
-└────────────┘
+CSV/Excel → Python (ETL) → PostgreSQL → API FastAPI → Dashboard / Power BI
 ```
 
----
-
-## 7. Requisitos Funcionais
-
-### RF01 – Ingestão de Dados
-- Ler arquivos CSV ou Excel de uma pasta `/data/raw`
-- Validar estrutura mínima esperada
-
-### RF02 – Tratamento de Dados
-- Padronizar nomes de colunas
-- Converter tipos (datas, valores)
-- Tratar valores nulos
-- Remover duplicidades
-
-### RF03 – Transformações
-- Criar colunas derivadas (ex: mês, ano)
-- Normalizar status de pagamento
-
-### RF04 – Persistência no Banco
-- Criar tabelas automaticamente se não existirem
-- Inserir dados em lote
-- Evitar reprocessamento duplicado
-
-### RF05 – Logging
-- Registrar execução do pipeline
-- Armazenar status, data, quantidade de registros
-
-### RF06 – Disponibilização para BI
-- Dados prontos para consumo direto pelo Power BI
+Componentes principais:
+- **ETL**: scripts de extração, transformação e carga
+- **Banco**: schema relacional + views analíticas
+- **API**: endpoints para filtros, métricas e detalhamento
+- **Dashboard**: filtros globais, comparativos e drill-down
 
 ---
 
-## 8. Requisitos Não Funcionais
+## 6. Requisitos Funcionais
 
+- **RF01**: Ingestão de arquivos CSV/Excel
+- **RF02**: Padronização de colunas e tipos
+- **RF03**: Cálculo de campos derivados (ano, mês, trimestre, dia da semana)
+- **RF04**: Carga em lote no PostgreSQL
+- **RF05**: Modo de carga acelerada via COPY (opcional)
+- **RF06**: Registro de logs e rastreabilidade
+- **RF07**: API para filtros, métricas e transações
+- **RF08**: Snapshot automático para fallback do dashboard
+
+---
+
+## 7. Requisitos Não Funcionais
+
+- Performance adequada para 5M registros
 - Código organizado e legível
-- Uso de virtual environment
-- Separação por camadas (ingestão, transformação, carga)
-- Scripts reutilizáveis
-- Performance aceitável para até 100k registros
+- Reprodutibilidade do pipeline
+- Documentação clara e atualizada
 
 ---
 
-## 9. Modelagem de Dados (PostgreSQL)
+## 8. Modelagem de Dados (resumo)
 
-### 9.1 Tabela: transacoes
-- id (PK)
-- data_transacao
-- cliente
-- produto
-- categoria
-- valor
-- status_pagamento
-
-### 9.2 Tabela: logs_etl
-- id_log (PK)
-- data_execucao
-- arquivo_processado
-- qtd_registros
-- status_execucao
-- mensagem_erro
+- `categorias`
+- `produtos`
+- `transacoes`
+- `transacao_itens`
+- `logs_etl`
+- `arquivos_processados`
 
 ---
 
-## 10. Estrutura de Pastas
+## 9. Fluxo de Execução do ETL
 
-```
-project-etl/
-│
-├── data/
-│   ├── raw/
-│   └── processed/
-│
-├── scripts/
-│   ├── extract.py
-│   ├── transform.py
-│   ├── load.py
-│   └── main.py
-│
-├── sql/
-│   └── schema.sql
-│
-├── dashboard/
-│   └── powerbi.pbix
-│
-├── logs/
-│   └── etl.log
-│
-├── requirements.txt
-└── README.md
-```
+1. Identificar arquivos em `data/raw`
+2. Extrair dados
+3. Transformar e validar
+4. Carregar no banco (batch ou COPY)
+5. Registrar logs e arquivos processados
 
 ---
 
-## 11. Fluxo de Execução do ETL
+## 10. Métricas de Sucesso
 
-1. Executar `main.py`
-2. Identificar arquivos novos
-3. Extrair dados
-4. Transformar dados
-5. Carregar no PostgreSQL
-6. Registrar log
+- ETL completo com 5M transações em tempo aceitável
+- Métricas comparativas corretas no dashboard
+- Dados consistentes entre transações e itens
+- Documentação completa para avaliação
 
 ---
 
-## 12. Uso do Claude Code (Copiloto)
+## 11. Artefatos Entregáveis
 
-### Exemplos de Uso
-- Gerar funções de ETL
-- Revisar código Python
-- Otimizar queries SQL
-- Sugerir validações de dados
-- Auxiliar na escrita do README
-
-### Prompt Base Recomendado
-> "Atue como um engenheiro de dados sênior. Gere código Python limpo, modular e documentado para um pipeline ETL usando pandas e PostgreSQL."
+- Pipeline ETL completo
+- API FastAPI
+- Dashboard React
+- Views Power BI
+- Relatório de performance (`docs/performance_report.md`)
+- Guia Power BI (`docs/powerbi_connection_guide.md`)
 
 ---
 
-## 13. Critérios de Aceite
+## 12. Riscos e Mitigações
 
-- Pipeline executa sem erros
-- Dados persistidos corretamente
-- Logs registrados
-- Power BI conectado ao PostgreSQL
-- README claro e profissional
+- **Carga lenta** → uso de COPY + índices
+- **Dados inconsistentes** → validações e reconciliação
+- **Baixa legibilidade** → documentação detalhada
 
 ---
 
-## 14. Possíveis Evoluções Futuras
-
-- Agendamento (cron / n8n)
-- API como fonte de dados
-- Incremental load
-- Dockerização
-- Deploy em cloud
-
----
-
-## 15. Indicadores de Sucesso
-
-- Projeto compreendido em até 5 minutos por recrutador
-- Código organizado e versionado
-- Capacidade de explicar decisões técnicas
-
----
-
-## 16. Conclusão
-
-Este projeto representa um **case realista de dados**, alinhado ao mercado, ao currículo do desenvolvedor e às melhores práticas de engenharia analítica. Ele serve tanto como **portfólio técnico** quanto como **base evolutiva para projetos mais complexos**.
-
+**Autor:** Kaio Ambrosio

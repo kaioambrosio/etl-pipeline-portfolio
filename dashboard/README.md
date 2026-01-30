@@ -1,39 +1,39 @@
-# Dashboard de Performance Financeira
+ï»¿# Dashboard de Performance Financeira
 
-Dashboard financeiro interativo desenvolvido em React + TypeScript + TailwindCSS, servindo como referência visual e de interação para replicação em Power BI.
+Dashboard financeiro interativo desenvolvido em React + TypeScript + TailwindCSS, servindo como referÃªncia visual para replicaÃ§Ã£o em Power BI.
 
-## ?? Objetivo
+## ğŸ¯ Objetivo
 
 Este dashboard foi criado para:
-- Servir como **referência visual** para implementação em Power BI
-- Demonstrar **padrões de interação** (cross-filtering, slicers)
-- Apresentar **métricas financeiras** com clareza executiva
-- Facilitar a **replicação** de componentes em ferramentas de BI
+- Servir como **referÃªncia visual** para implementaÃ§Ã£o em Power BI
+- Demonstrar **padrÃµes de interaÃ§Ã£o** (cross-filtering, slicers)
+- Apresentar **mÃ©tricas financeiras** com clareza executiva
+- Facilitar a **replicaÃ§Ã£o** de componentes em ferramentas de BI
 
-## ?? Métricas Implementadas
+## ğŸ“Š MÃ©tricas Implementadas
 
-| Métrica | Fórmula | Componente |
+| MÃ©trica | FÃ³rmula | Componente |
 |---------|---------|------------|
 | Valor Total Transacionado | `SUM(valor)` | Hero KPI Card |
-| Quantidade de Transações | `COUNT(id_transacao)` | KPI Card |
-| Ticket Médio | `Valor Total / Quantidade` | Indicadores Card |
+| Quantidade de TransaÃ§Ãµes | `COUNT(id_transacao)` | KPI Card |
+| Ticket MÃ©dio | `Valor Total / Quantidade` | Indicadores Card |
 | Qtd Pagas | `COUNT WHERE status = 'Pago'` | KPI Card |
 | % Pagas | `Qtd Pagas / Quantidade` | Indicadores Card |
-| Tempo Médio Processamento | `AVG(data_processamento - data_transacao)` | Indicadores Card |
-| Tempo Médio até Pagamento | `AVG(data_pagamento - data_transacao)` | Indicadores Card |
-| Variação vs Período Anterior | `(Atual - Anterior) / Anterior` | Hero KPI Badge |
+| Tempo MÃ©dio Processamento | `AVG(data_processamento - data_transacao)` | Indicadores Card |
+| Tempo MÃ©dio atÃ© Pagamento | `AVG(data_pagamento - data_transacao)` | Indicadores Card |
+| VariaÃ§Ã£o vs PerÃ­odo Anterior | `(Atual - Anterior) / Anterior` | KPI Badge |
 
-## ??? Schema de Dados
+## ğŸ§± Schema de Dados (simplificado)
 
 ```sql
-CREATE TABLE public.transacoes (
+CREATE TABLE transacoes (
   id SERIAL PRIMARY KEY,
   id_transacao VARCHAR(50) UNIQUE,
   cliente VARCHAR(255),
   produto VARCHAR(255),
   categoria VARCHAR(100),
-  valor NUMERIC(12,2),
-  status_pagamento VARCHAR(20), -- 'Pago' | 'Pendente' | 'Atrasado' | 'Cancelado' | 'Erro'
+  valor NUMERIC(15,2),
+  status_pagamento VARCHAR(50), -- PAGO | PENDENTE | ATRASADO | CANCELADO | ERRO
   arquivo_origem VARCHAR(255),
   data_transacao TIMESTAMP,
   data_processamento TIMESTAMP,
@@ -44,61 +44,52 @@ CREATE TABLE public.transacoes (
   ano_transacao INT
 );
 
-CREATE TABLE public.categorias (
+CREATE TABLE produtos (
   id SERIAL PRIMARY KEY,
-  nome VARCHAR(100) UNIQUE,
-  descricao TEXT
-);
-
-CREATE TABLE public.produtos (
-  id SERIAL PRIMARY KEY,
-  categoria_id INT REFERENCES categorias(id),
+  categoria_id INT,
   nome VARCHAR(255) UNIQUE,
   descricao TEXT,
-  preco_base NUMERIC(12,2),
-  preco_min NUMERIC(12,2),
-  preco_max NUMERIC(12,2),
-  ativo BOOLEAN
+  preco_base NUMERIC(15,2)
 );
 
-CREATE TABLE public.transacao_itens (
+CREATE TABLE transacao_itens (
   id SERIAL PRIMARY KEY,
-  id_transacao VARCHAR(50) REFERENCES transacoes(id_transacao),
-  produto_id INT REFERENCES produtos(id),
+  id_transacao VARCHAR(50),
+  produto_id INT,
   quantidade INT,
-  valor_unitario NUMERIC(12,2),
-  valor_total NUMERIC(12,2)
+  valor_unitario NUMERIC(15,2),
+  valor_total NUMERIC(15,2)
 );
 ```
 
-## ?? Como Executar
+## âš™ï¸ Como Executar
 
-### Modo Mock (Desenvolvimento)
+### Modo Mock (desenvolvimento)
 
-Sem necessidade de banco de dados. Os dados são gerados automaticamente:
+Sem necessidade de banco de dados. Os dados sÃ£o gerados localmente ou via snapshot:
 
 ```bash
 npm install
 npm run dev
 ```
 
-### Modo PostgreSQL (Produção)
+### Modo PostgreSQL (API)
 
-Configure as variáveis de ambiente:
+Configure as variÃ¡veis de ambiente:
 
 ```env
 VITE_API_URL=http://localhost:8000
 VITE_USE_MOCK=false
 ```
 
-> A API FastAPI na raiz do projeto é responsável por conectar no PostgreSQL.
+> A API FastAPI na raiz do projeto Ã© responsÃ¡vel por conectar ao PostgreSQL.
 
-### Snapshot automático (fallback)
+### Snapshot automÃ¡tico (fallback)
 
-Ao iniciar a API, um snapshot é gerado em `public/mock.json`.
-Se a API estiver indisponível, o dashboard usa esse snapshot automaticamente.
+Ao iniciar a API, um snapshot Ã© gerado em `public/mock.json`.  
+Se a API estiver indisponÃ­vel, o dashboard usa esse snapshot automaticamente.
 
-### Endpoints da API utilizados
+## ğŸ”Œ Endpoints da API utilizados
 
 - `GET /filtros`
 - `GET /metricas`
@@ -106,78 +97,69 @@ Se a API estiver indisponível, o dashboard usa esse snapshot automaticamente.
 - `GET /agregados/categorias`
 - `GET /agregados/volume-mensal`
 - `GET /agregados/dia-semana`
-- `GET /transacoes` (paginações)
+- `GET /transacoes` (paginaÃ§Ã£o)
 - `GET /transacoes/total`
 - `GET /transacoes/{id_transacao}` (detalhamento)
 
-## ??? Mapeamento para Power BI
+## ğŸ§­ Mapeamento para Power BI
 
 | Componente React | Visual Power BI |
 |-----------------|-----------------|
 | Hero KPI Card | Card com Sparkline |
-| KPI Card Crescimento | Card com Comparação |
-| KPI Card Atividade | Card + Mini Gráfico de Barras |
-| DistribuicaoCategoriaChart | Gráfico de Barras Horizontal |
-| VolumeFinanceiroChart | Gráfico de Área |
+| KPI Card Crescimento | Card com ComparaÃ§Ã£o |
+| KPI Card Atividade | Card + Mini GrÃ¡fico de Barras |
+| DistribuicaoCategoriaChart | GrÃ¡fico de Barras Horizontal |
+| VolumeFinanceiroChart | GrÃ¡fico de Ãrea |
 | IndicadoresFinanceirosCard | Card Personalizado |
 | TransacoesTable | Tabela/Matrix |
 | FiltersBar | Slicers (Dropdown) |
 
-## ?? Design System
+## ğŸ¨ Design System
 
-- **Cores**: Verde primário (#16a34a), Lime accent (#84cc16)
+- **Cores**: Verde primÃ¡rio (#16a34a), Lime accent (#84cc16)
 - **Background**: #f6f7f9
-- **Cards**: Brancos com border-radius 16-24px
+- **Cards**: Brancos com border-radius 16â€“24px
 - **Sombras**: Sutis, baixa opacidade
-- **Espaçamento**: 16px / 24px / 32px
+- **EspaÃ§amento**: 16px / 24px / 32px
 - **Fonte**: Inter
 
-## ?? Interações
+## ğŸ§© InteraÃ§Ãµes
 
-### Filtros Globais (Slicers)
-- Ano, Mês, Categoria, Status, Produto
+### Filtros globais (slicers)
+- Ano, MÃªs, Categoria, Status, Produto
 - Afetam todos os visuais simultaneamente
 
-### Cross-Filtering
-- Clique em barra de categoria ? filtra Volume Financeiro e Tabela
-- Comportamento similar ao Power BI
+### Cross-filtering
+- Clique em uma barra de categoria â†’ filtra volume financeiro e tabela
 
-### Detalhamento de Transação
-- Clique em uma linha da tabela para expandir o card e ver itens e descrição
+### Detalhamento de transaÃ§Ã£o
+- Clique em uma linha da tabela para expandir o card e ver itens e descriÃ§Ã£o
 
-## ?? Estrutura de Arquivos
+## ğŸ“ Estrutura de Arquivos
 
 ```
 src/
 +-- components/
-¦   +-- dashboard/
-¦       +-- Sidebar.tsx
-¦       +-- Topbar.tsx
-¦       +-- FiltersBar.tsx
-¦       +-- KpiCards.tsx
-¦       +-- DistribuicaoCategoriaChart.tsx
-¦       +-- VolumeFinanceiroChart.tsx
-¦       +-- IndicadoresFinanceirosCard.tsx
-¦       +-- TransacoesTable.tsx
-¦       +-- EmptyState.tsx
+Â¦   +-- dashboard/
+Â¦       +-- Sidebar.tsx
+Â¦       +-- Topbar.tsx
+Â¦       +-- FiltersBar.tsx
+Â¦       +-- KpiCards.tsx
+Â¦       +-- DistribuicaoCategoriaChart.tsx
+Â¦       +-- VolumeFinanceiroChart.tsx
+Â¦       +-- IndicadoresFinanceirosCard.tsx
+Â¦       +-- TransacoesTable.tsx
+Â¦       +-- EmptyState.tsx
 +-- lib/
-¦   +-- data/
-¦   ¦   +-- mockGenerator.ts  # Gera transações
-¦   ¦   +-- metrics.ts        # Cálculos de KPIs
-¦   ¦   +-- filters.ts        # Lógica de filtros
-¦   +-- formatters.ts         # Formatação pt-BR
+Â¦   +-- data/
+Â¦   Â¦   +-- mockGenerator.ts
+Â¦   Â¦   +-- metrics.ts
+Â¦   Â¦   +-- filters.ts
+Â¦   +-- formatters.ts
 +-- pages/
-    +-- Dashboard.tsx         # Página principal
+    +-- Dashboard.tsx
 ```
-
-## ?? Dicas de Replicação no Power BI
-
-1. **KPIs**: Use Cards com formatação condicional para setas
-2. **Cross-filter**: Configure interações entre visuais
-3. **Cores**: Use tema personalizado com as cores do design system
-4. **Tooltips**: Replique o formato de tooltip do React
-5. **Status Pills**: Use formatação condicional com ícones
 
 ---
 
-Desenvolvido com ?? para servir como referência Power BI
+Desenvolvido para servir como referÃªncia Power BI e portfÃ³lio.

@@ -1,13 +1,16 @@
 ﻿# ETL Portfólio + Dashboard Financeiro
 
-Projeto de portfólio integrado: ETL (Python) + PostgreSQL + API FastAPI + Dashboard (React).
+Projeto de portfólio integrado: ETL (Python) + PostgreSQL + API FastAPI + Dashboard (React).  
+Foco em volume, consistência de dados, métricas comparativas e performance.
 
 ## O que este projeto demonstra
 
 - Pipeline ETL completo: extração, transformação, validação e carga em lote.
-- Catálogo de produtos e itens por transação (modelagem mais próxima de um cenário real).
-- API com filtros e métricas comparativas (mês/ano anterior).
+- Modelagem mais realista: catálogo de produtos + itens por transação.
+- Carga acelerada com COPY nativo do PostgreSQL (opcional e configurável).
+- API com filtros e comparativos (mês/ano anterior).
 - Dashboard interativo com cross-filtering e detalhamento de transações.
+- Views prontas para Power BI.
 
 ## Capturas do dashboard
 
@@ -20,8 +23,9 @@ Projeto de portfólio integrado: ETL (Python) + PostgreSQL + API FastAPI + Dashb
 ## Pré-requisitos
 
 - Python 3.12+
-- PostgreSQL 15+
+- PostgreSQL 15+ (testado em 18.1)
 - Node.js 18+
+- Power BI Desktop (opcional)
 
 ## Setup rápido
 
@@ -31,7 +35,7 @@ psql -d etl_portfolio -f sql/setup.sql
 psql -d etl_portfolio -f sql/optimizations.sql
 ```
 
-2) ETL
+2) ETL (setup + amostra)
 ```bash
 cp .env.example .env
 pip install -r requirements.txt
@@ -44,13 +48,13 @@ python scripts/main.py
 python scripts/generate_portfolio_data.py --rows 5000000 --years 5
 python scripts/main.py
 ```
-Gera catálogo, transações e itens. Os dados possuem distribuição sazonal, variações por dia da semana e nomes acentuados em pt-BR.
+Gera catálogo, transações e itens com sazonalidade, variação semanal e nomes em pt-BR.
 
 4) API (FastAPI)
 ```bash
 uvicorn api.main:app --reload --port 8000
 ```
-Ao subir, a API gera `dashboard/public/mock.json` como snapshot.
+Ao subir, a API gera `dashboard/public/mock.json` como snapshot para fallback.
 
 5) Dashboard
 ```bash
@@ -63,6 +67,8 @@ npm run dev
 
 ### ETL/API (`.env`)
 - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+- `ETL_USE_COPY` (true/false) – usa COPY para grandes volumes
+- `ETL_COPY_THRESHOLD` (ex: 200000) – mínimo de linhas para usar COPY
 - `API_CORS_ORIGINS` (opcional)
 - `API_SNAPSHOT_LIMIT` (opcional)
 
@@ -71,10 +77,12 @@ npm run dev
 VITE_API_URL=http://localhost:8000
 VITE_USE_MOCK=false
 ```
-Se `VITE_USE_MOCK=true`, o dashboard usa o snapshot ou o gerador local.
+Se `VITE_USE_MOCK=true`, o dashboard usa o snapshot/gerador local.
 
-## Documentação específica
+## Documentação
 
 - ETL detalhado: [README_ETL.md](README_ETL.md)
 - Dashboard: [dashboard/README.md](dashboard/README.md)
+- Performance: [docs/performance_report.md](docs/performance_report.md)
 - Power BI: [docs/powerbi_connection_guide.md](docs/powerbi_connection_guide.md)
+- PRD do projeto: [ETL.md](ETL.md)
