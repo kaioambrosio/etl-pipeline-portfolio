@@ -115,6 +115,12 @@ class ETLPipeline:
         logger.info(f"Processando arquivo: {file_path.name}")
         logger.info("-" * 40)
 
+        file_name_lower = file_path.name.lower()
+        if "catalogo_produtos" in file_name_lower or "produtos_catalogo" in file_name_lower:
+            return self.process_catalog_file(file_path)
+        if "transacao_itens" in file_name_lower:
+            return self.process_items_file(file_path)
+
         # =====================================================================
         # ETAPA 1: EXTRAÇÃO
         # =====================================================================
@@ -203,6 +209,80 @@ class ETLPipeline:
 
         return stats
 
+    def process_catalog_file(self, file_path: Path) -> dict:
+        """
+        Processa arquivo de catálogo de produtos/categorias.
+        """
+        stats = {
+            "file": file_path.name,
+            "success": False,
+            "extract": None,
+            "load": None,
+            "error": None,
+        }
+
+        logger.info("📦 ETAPA CATÁLOGO: Produtos/Categorias")
+
+        required_columns = {
+            "categoria",
+            "produto",
+            "descricao",
+            "preco_base",
+            "preco_min",
+            "preco_max",
+        }
+        optional_columns = {"categoria_descricao", "ativo"}
+
+        extract_result = self.extractor.extract_file(
+            file_path,
+            required_columns=required_columns,
+            optional_columns=optional_columns,
+        )
+
+        if not extract_result.success:
+            logger.error(f"Falha na extração: {extract_result.error_message}")
+            stats["error"] = f"Extração: {extract_result.error_message}"
+            return stats
+
+        stats["extract"] = {
+            "records": extract_result.records_count,
+            "hash": extract_result.file_hash,
+        }
+
+        load_stats = self.loader.load_catalog(extract_result.dataframe)
+        if load_stats.get("error"):
+            stats["error"] = "Carga catálogo falhou"
+            return stats
+
+        stats["load"] = load_stats
+        stats["success"] = True
+        logger.success("Catálogo carregado com sucesso")
+        return stats
+
+    def process_items_file(self, file_path: Path) -> dict:
+        """
+        Processa arquivo de itens de transações (streaming).
+        """
+        stats = {
+            "file": file_path.name,
+            "success": False,
+            "load": None,
+            "error": None,
+        }
+
+        logger.info("🧾 ETAPA ITENS: Transação_itens")
+
+        load_stats = self.loader.load_items_from_file(file_path)
+        stats["load"] = load_stats
+
+        if load_stats.get("failed", 0) > 0:
+            stats["error"] = "Carga de itens com falhas"
+        else:
+            stats["success"] = True
+            logger.success("Itens carregados com sucesso")
+
+        return stats
+
     def run(self, file_path: Optional[str] = None) -> List[dict]:
         """
         Executa o pipeline ETL.
@@ -233,6 +313,16 @@ class ETLPipeline:
             logger.warning("Nenhum arquivo encontrado para processar")
             return results
 
+        def _priority(path: Path) -> int:
+            name = path.name.lower()
+            if "catalogo_produtos" in name or "produtos_catalogo" in name:
+                return 0
+            if "transacao_itens" in name:
+                return 2
+            return 1
+
+        files = sorted(files, key=_priority)
+
         logger.info(f"Arquivos a processar: {len(files)}")
 
         # Processar cada arquivo
@@ -255,8 +345,10 @@ class ETLPipeline:
         success_count = sum(1 for r in results if r["success"])
         failed_count = len(results) - success_count
 
-        total_extracted = sum(r["extract"]["records"] for r in results if r["extract"])
-        total_loaded = sum(r["load"]["inserted"] for r in results if r["load"])
+        total_extracted = sum(
+            (r.get("extract") or {}).get("records", 0) for r in results
+        )
+        total_loaded = sum((r.get("load") or {}).get("inserted", 0) for r in results)
 
         logger.info("")
         logger.info("=" * 60)
@@ -315,7 +407,7 @@ def generate_sample_data(num_records: int = 1000) -> None:
 
     categorias = ["Eletrônicos", "Periféricos", "Componentes", "Mobile", "Acessórios"]
 
-    status_list = ["pago", "pendente", "cancelado", "atrasado"]
+    status_list = ["pago", "pendente", "cancelado", "atrasado", "erro"]
 
     # Gerar dados
     data = []

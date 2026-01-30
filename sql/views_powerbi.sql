@@ -51,6 +51,7 @@ SELECT
         WHEN t.status_pagamento = 'PENDENTE' THEN 'Aguardando'
         WHEN t.status_pagamento = 'CANCELADO' THEN 'Cancelado'
         WHEN t.status_pagamento = 'ATRASADO' THEN 'Em Atraso'
+        WHEN t.status_pagamento = 'ERRO' THEN 'Erro'
     END AS status_descritivo,
 
     -- Métricas
@@ -177,7 +178,7 @@ SELECT
     MAX(data_transacao) AS ultima_compra,
     RANK() OVER (ORDER BY SUM(valor) DESC) AS ranking
 FROM transacoes
-WHERE status_pagamento != 'CANCELADO'
+WHERE status_pagamento NOT IN ('CANCELADO', 'ERRO')
 GROUP BY cliente
 ORDER BY valor_total DESC;
 
@@ -200,7 +201,7 @@ SELECT
     RANK() OVER (ORDER BY COUNT(*) DESC) AS ranking_quantidade,
     RANK() OVER (ORDER BY SUM(valor) DESC) AS ranking_valor
 FROM transacoes
-WHERE status_pagamento != 'CANCELADO'
+WHERE status_pagamento NOT IN ('CANCELADO', 'ERRO')
 GROUP BY produto, categoria
 ORDER BY valor_total DESC;
 
@@ -226,7 +227,7 @@ SELECT
         2
     ) AS participacao_pct
 FROM transacoes
-WHERE status_pagamento != 'CANCELADO'
+WHERE status_pagamento NOT IN ('CANCELADO', 'ERRO')
 GROUP BY categoria
 ORDER BY valor_total DESC;
 

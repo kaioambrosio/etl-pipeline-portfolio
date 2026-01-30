@@ -1,0 +1,218 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dashboard Financeiro - Design System */
+
+@layer base {
+  :root {
+    /* Background & Surfaces */
+    --background: 220 14% 96%; /* #f6f7f9 */
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primary - Verde/Lime moderno */
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 142 76% 94%;
+    --primary-glow: 142 76% 46%;
+
+    /* Secondary */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* Muted */
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent - Lime/Verde vibrante */
+    --accent: 84 81% 44%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 84 81% 92%;
+
+    /* Status Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 142 76% 94%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 38 92% 94%;
+
+    --error: 0 84% 60%;
+    --error-foreground: 0 0% 100%;
+    --error-light: 0 84% 96%;
+
+    --pending: 220 14% 50%;
+    --pending-foreground: 0 0% 100%;
+    --pending-light: 220 14% 94%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders & Inputs */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 142 76% 36%;
+
+    --radius: 1rem;
+    --radius-lg: 1.5rem;
+    --radius-sm: 0.5rem;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(220 14% 11% / 0.03);
+    --shadow: 0 1px 3px 0 hsl(220 14% 11% / 0.05), 0 1px 2px -1px hsl(220 14% 11% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(220 14% 11% / 0.05), 0 2px 4px -2px hsl(220 14% 11% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(220 14% 11% / 0.05), 0 4px 6px -4px hsl(220 14% 11% / 0.05);
+    --shadow-card: 0 2px 8px -2px hsl(220 14% 11% / 0.08), 0 4px 16px -4px hsl(220 14% 11% / 0.04);
+
+    /* Chart Colors */
+    --chart-1: 142 76% 36%;
+    --chart-2: 84 81% 44%;
+    --chart-3: 199 89% 48%;
+    --chart-4: 262 83% 58%;
+    --chart-5: 38 92% 50%;
+    --chart-6: 340 82% 52%;
+    --chart-7: 180 66% 46%;
+    --chart-8: 220 14% 60%;
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 220 14% 96%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 47% 18%;
+    --sidebar-accent-foreground: 220 14% 96%;
+    --sidebar-border: 222 47% 18%;
+    --sidebar-ring: 142 76% 36%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Dashboard Cards */
+  .dashboard-card {
+    @apply bg-card rounded-[var(--radius-lg)] shadow-[var(--shadow-card)] border border-border/50 p-6;
+  }
+
+  .dashboard-card-sm {
+    @apply bg-card rounded-[var(--radius)] shadow-[var(--shadow-card)] border border-border/50 p-4;
+  }
+
+  /* Hero KPI Card */
+  .kpi-hero {
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+  }
+
+  .kpi-hero::before {
+    content: '';
+    @apply absolute inset-0 opacity-10;
+    background-image: radial-gradient(circle at 100% 0%, white 0%, transparent 50%);
+  }
+
+  /* Indicator Card */
+  .indicator-card {
+    background: linear-gradient(145deg, hsl(142 76% 36%) 0%, hsl(142 60% 30%) 100%);
+  }
+
+  /* Status Pills */
+  .status-pill {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .status-pago {
+    @apply bg-[hsl(var(--success-light))] text-[hsl(var(--success))];
+  }
+
+  .status-pendente {
+    @apply bg-[hsl(var(--pending-light))] text-[hsl(var(--pending))];
+  }
+
+  .status-erro {
+    @apply bg-[hsl(var(--error-light))] text-[hsl(var(--error))];
+  }
+
+  .status-cancelado {
+    @apply bg-[hsl(var(--error-light))] text-[hsl(var(--error))];
+  }
+
+  .status-atrasado {
+    @apply bg-[hsl(var(--warning-light))] text-[hsl(var(--warning))];
+  }
+
+  /* Sidebar Icon Button */
+  .sidebar-icon-btn {
+    @apply w-10 h-10 flex items-center justify-center rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors;
+  }
+
+  .sidebar-icon-btn.active {
+    @apply bg-sidebar-primary text-sidebar-primary-foreground;
+  }
+
+  /* Filter Badge */
+  .filter-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium;
+  }
+
+  /* Mini Chart Container */
+  .mini-chart {
+    @apply h-12 w-full;
+  }
+
+  /* Sparkline */
+  .sparkline {
+    @apply h-8 w-24;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

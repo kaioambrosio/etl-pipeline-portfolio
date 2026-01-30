@@ -151,14 +151,7 @@ data/processed/*
 # -----------------------------------------------------------------------------
 # Task Master
 # -----------------------------------------------------------------------------
-.taskmaster/reports/
-.taskmaster/state.json
-
-# Manter configurações e docs
-!.taskmaster/config.json
-!.taskmaster/docs/
-!.taskmaster/templates/
-!.taskmaster/tasks/
+.taskmaster/
 
 # -----------------------------------------------------------------------------
 # Jupyter Notebooks
@@ -192,3 +185,9 @@ temp/
 dist/
 build/
 *.egg-info/
+
+# -----------------------------------------------------------------------------
+# Local tooling / scratch
+# -----------------------------------------------------------------------------
+.claude/
+=2.1.0

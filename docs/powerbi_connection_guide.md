@@ -9,6 +9,7 @@ Este documento descreve como conectar o Power BI Desktop ao banco de dados Postg
 1. **Power BI Desktop** instalado (versão mais recente recomendada)
 2. **Driver PostgreSQL ODBC** (Npgsql) - geralmente já incluído no Power BI
 3. **PostgreSQL** rodando com o banco `etl_portfolio` populado
+4. **Views criadas**: execute `psql -d etl_portfolio -f sql/setup.sql`
 
 ## Dados de Conexão
 
@@ -59,9 +60,13 @@ Selecione as seguintes views otimizadas para análise:
 | View | Descrição | Uso |
 |------|-----------|-----|
 | `vw_fato_transacoes` | Tabela fato principal | Base de todas as análises |
+| `vw_dim_calendario` | Dimensão calendário | Relacionamentos de tempo |
+| `vw_dim_produto` | Dimensão de produtos | Análises por produto |
 | `vw_kpi_resumo` | KPIs principais | Cards do dashboard |
 | `vw_analise_mensal` | Análise por mês | Gráficos de tendência |
+| `vw_top_clientes` | Ranking de clientes | Top N análises |
 | `vw_top_produtos` | Ranking de produtos | Top N análises |
+| `vw_analise_categoria` | Participação por categoria | Gráfico de pizza/barras |
 | `vw_resumo_transacoes` | Resumo agregado | Visão geral |
 
 ### 6. Transformar Dados (Opcional)

@@ -77,7 +77,7 @@ class DataExtractor:
 
         Args:
             raw_data_path: Caminho para a pasta de dados brutos.
-                          Se não informado, usa o padrão das configurações.
+                        Se não informado, usa o padrão das configurações.
         """
         self.settings = get_settings()
         self.raw_data_path = raw_data_path or self.settings.raw_data_path
@@ -118,7 +118,13 @@ class DataExtractor:
         logger.info(f"Encontrados {len(files)} arquivo(s) para processar")
         return sorted(files)
 
-    def validate_columns(self, df: pd.DataFrame, file_path: Path) -> Tuple[bool, List[str]]:
+    def validate_columns(
+        self,
+        df: pd.DataFrame,
+        file_path: Path,
+        required_columns: Optional[set] = None,
+        optional_columns: Optional[set] = None,
+    ) -> Tuple[bool, List[str]]:
         """
         Valida se o DataFrame possui as colunas obrigatórias.
 
@@ -135,17 +141,20 @@ class DataExtractor:
         df_columns = {col.lower().strip() for col in df.columns}
 
         # Verificar colunas obrigatórias
-        missing_required = REQUIRED_COLUMNS - df_columns
+        required = required_columns or REQUIRED_COLUMNS
+        optional = optional_columns or OPTIONAL_COLUMNS
+
+        missing_required = required - df_columns
         if missing_required:
             return False, [f"Colunas obrigatórias ausentes: {missing_required}"]
 
         # Verificar colunas opcionais
-        missing_optional = OPTIONAL_COLUMNS - df_columns
+        missing_optional = optional - df_columns
         if missing_optional:
             warnings.append(f"Colunas opcionais ausentes: {missing_optional}")
 
         # Verificar colunas extras (informativo)
-        expected_columns = REQUIRED_COLUMNS | OPTIONAL_COLUMNS
+        expected_columns = required | optional
         extra_columns = df_columns - expected_columns
         if extra_columns:
             warnings.append(f"Colunas extras encontradas (serão ignoradas): {extra_columns}")
@@ -204,7 +213,12 @@ class DataExtractor:
         engine = "openpyxl" if file_path.suffix == ".xlsx" else "xlrd"
         return pd.read_excel(file_path, engine=engine)
 
-    def extract_file(self, file_path: Path) -> ExtractionResult:
+    def extract_file(
+        self,
+        file_path: Path,
+        required_columns: Optional[set] = None,
+        optional_columns: Optional[set] = None,
+    ) -> ExtractionResult:
         """
         Extrai dados de um arquivo individual.
 
@@ -246,7 +260,12 @@ class DataExtractor:
             df.columns = df.columns.str.lower().str.strip()
 
             # Validar estrutura
-            is_valid, warnings = self.validate_columns(df, file_path)
+            is_valid, warnings = self.validate_columns(
+                df,
+                file_path,
+                required_columns=required_columns,
+                optional_columns=optional_columns,
+            )
             if not is_valid:
                 return ExtractionResult(
                     success=False,

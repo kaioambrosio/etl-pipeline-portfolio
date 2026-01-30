@@ -17,6 +17,7 @@ from typing import Optional
 from sqlalchemy import (
     DECIMAL,
     JSON,
+    Boolean,
     BigInteger,
     CheckConstraint,
     DateTime,
@@ -87,7 +88,7 @@ class Transacao(Base):
 
     # Constraints
     __table_args__ = (
-        UniqueConstraint("id_transacao", "arquivo_origem", name="uk_transacao_unica"),
+        UniqueConstraint("id_transacao", name="uk_transacao_id"),
         CheckConstraint("valor >= 0", name="ck_valor_positivo"),
         CheckConstraint("mes_transacao BETWEEN 1 AND 12", name="ck_mes_valido"),
         CheckConstraint("dia_semana BETWEEN 0 AND 6", name="ck_dia_semana_valido"),
@@ -95,8 +96,30 @@ class Transacao(Base):
         Index("idx_transacoes_data", "data_transacao"),
         Index("idx_transacoes_cliente", "cliente"),
         Index("idx_transacoes_categoria", "categoria"),
+        Index("idx_transacoes_produto", "produto"),
         Index("idx_transacoes_status", "status_pagamento"),
         Index("idx_transacoes_ano_mes", "ano_transacao", "mes_transacao"),
+        Index(
+            "idx_transacoes_ano_mes_data",
+            "ano_transacao",
+            "mes_transacao",
+            "data_transacao",
+        ),
+        Index(
+            "idx_transacoes_ano_mes_categoria_data",
+            "ano_transacao",
+            "mes_transacao",
+            "categoria",
+            "data_transacao",
+        ),
+        Index(
+            "idx_transacoes_ano_mes_status_data",
+            "ano_transacao",
+            "mes_transacao",
+            "status_pagamento",
+            "data_transacao",
+        ),
+        Index("idx_transacoes_id_transacao", "id_transacao"),
     )
 
     def __repr__(self) -> str:
@@ -217,6 +240,68 @@ class ArquivoProcessado(Base):
 
     def __repr__(self) -> str:
         return f"<ArquivoProcessado(nome='{self.nome_arquivo}', status='{self.status}')>"
+
+
+class Categoria(Base):
+    """Modelo para a dimensão de categorias."""
+
+    __tablename__ = "categorias"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nome: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    descricao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<Categoria(id={self.id}, nome='{self.nome}')>"
+
+
+class Produto(Base):
+    """Modelo para a dimensão de produtos."""
+
+    __tablename__ = "produtos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    categoria_id: Mapped[int] = mapped_column(Integer, ForeignKey("categorias.id"), nullable=False)
+    nome: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    descricao: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    preco_base: Mapped[Decimal] = mapped_column(DECIMAL(15, 2), nullable=False)
+    preco_min: Mapped[Decimal] = mapped_column(DECIMAL(15, 2), nullable=False)
+    preco_max: Mapped[Decimal] = mapped_column(DECIMAL(15, 2), nullable=False)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    __table_args__ = (
+        Index("idx_produtos_categoria", "categoria_id"),
+        Index("idx_produtos_nome", "nome"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<Produto(id={self.id}, nome='{self.nome}')>"
+
+
+class TransacaoItem(Base):
+    """Modelo para itens da transação."""
+
+    __tablename__ = "transacao_itens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_transacao: Mapped[str] = mapped_column(
+        String(50), ForeignKey("transacoes.id_transacao"), nullable=False
+    )
+    produto_id: Mapped[int] = mapped_column(Integer, ForeignKey("produtos.id"), nullable=False)
+    quantidade: Mapped[int] = mapped_column(Integer, nullable=False)
+    valor_unitario: Mapped[Decimal] = mapped_column(DECIMAL(15, 2), nullable=False)
+    valor_total: Mapped[Decimal] = mapped_column(DECIMAL(15, 2), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("quantidade > 0", name="ck_item_quantidade"),
+        CheckConstraint("valor_unitario >= 0", name="ck_item_valor_unitario"),
+        CheckConstraint("valor_total >= 0", name="ck_item_valor_total"),
+        Index("idx_itens_transacao", "id_transacao"),
+        Index("idx_itens_produto", "produto_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<TransacaoItem(id={self.id}, transacao='{self.id_transacao}')>"
 
 
 def get_engine():

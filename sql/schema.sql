@@ -20,7 +20,48 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Esta é a tabela principal de dados do sistema.
 -- -----------------------------------------------------------------------------
 
+DROP TABLE IF EXISTS transacao_itens CASCADE;
+DROP TABLE IF EXISTS produtos CASCADE;
+DROP TABLE IF EXISTS categorias CASCADE;
 DROP TABLE IF EXISTS transacoes CASCADE;
+
+-- -----------------------------------------------------------------------------
+-- TABELA: categorias
+-- -----------------------------------------------------------------------------
+-- Dimensão de categorias de produtos.
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE categorias (
+    id                  SERIAL PRIMARY KEY,
+    nome                VARCHAR(100) NOT NULL UNIQUE,
+    descricao           TEXT
+);
+
+COMMENT ON TABLE categorias IS 'Dimensão de categorias de produtos';
+COMMENT ON COLUMN categorias.nome IS 'Nome da categoria';
+
+-- -----------------------------------------------------------------------------
+-- TABELA: produtos
+-- -----------------------------------------------------------------------------
+-- Dimensão de produtos com faixa de preço realista.
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE produtos (
+    id                  SERIAL PRIMARY KEY,
+    categoria_id        INTEGER NOT NULL REFERENCES categorias(id),
+    nome                VARCHAR(255) NOT NULL UNIQUE,
+    descricao           TEXT,
+    preco_base          DECIMAL(15, 2) NOT NULL CHECK (preco_base >= 0),
+    preco_min           DECIMAL(15, 2) NOT NULL CHECK (preco_min >= 0),
+    preco_max           DECIMAL(15, 2) NOT NULL CHECK (preco_max >= 0),
+    ativo               BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX idx_produtos_categoria ON produtos(categoria_id);
+CREATE INDEX idx_produtos_nome ON produtos(nome);
+
+COMMENT ON TABLE produtos IS 'Dimensão de produtos';
+COMMENT ON COLUMN produtos.preco_base IS 'Preço médio/base sugerido do produto';
 
 CREATE TABLE transacoes (
     -- Identificador único da transação
@@ -59,22 +100,47 @@ CREATE TABLE transacoes (
     data_processamento  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- Constraint para evitar duplicatas
-    CONSTRAINT uk_transacao_unica UNIQUE (id_transacao, arquivo_origem)
+    CONSTRAINT uk_transacao_id UNIQUE (id_transacao)
 );
 
 -- Índices para otimização de consultas
 CREATE INDEX idx_transacoes_data ON transacoes(data_transacao);
 CREATE INDEX idx_transacoes_cliente ON transacoes(cliente);
 CREATE INDEX idx_transacoes_categoria ON transacoes(categoria);
+CREATE INDEX idx_transacoes_produto ON transacoes(produto);
 CREATE INDEX idx_transacoes_status ON transacoes(status_pagamento);
 CREATE INDEX idx_transacoes_ano_mes ON transacoes(ano_transacao, mes_transacao);
+CREATE INDEX idx_transacoes_ano_mes_data ON transacoes(ano_transacao, mes_transacao, data_transacao);
+CREATE INDEX idx_transacoes_ano_mes_categoria_data ON transacoes(ano_transacao, mes_transacao, categoria, data_transacao);
+CREATE INDEX idx_transacoes_ano_mes_status_data ON transacoes(ano_transacao, mes_transacao, status_pagamento, data_transacao);
+CREATE INDEX idx_transacoes_id_transacao ON transacoes(id_transacao);
 
 -- Comentários na tabela e colunas
 COMMENT ON TABLE transacoes IS 'Tabela principal de transações financeiras processadas pelo ETL';
 COMMENT ON COLUMN transacoes.id IS 'Chave primária auto-incrementada';
 COMMENT ON COLUMN transacoes.id_transacao IS 'ID original da transação no arquivo fonte';
 COMMENT ON COLUMN transacoes.valor IS 'Valor monetário da transação em BRL';
-COMMENT ON COLUMN transacoes.status_pagamento IS 'Status: PAGO, PENDENTE, CANCELADO, ATRASADO';
+COMMENT ON COLUMN transacoes.status_pagamento IS 'Status: PAGO, PENDENTE, CANCELADO, ATRASADO, ERRO';
+
+-- -----------------------------------------------------------------------------
+-- TABELA: transacao_itens
+-- -----------------------------------------------------------------------------
+-- Itens da transação (permite múltiplos produtos por transação).
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE transacao_itens (
+    id                  SERIAL PRIMARY KEY,
+    id_transacao        VARCHAR(50) NOT NULL REFERENCES transacoes(id_transacao) ON DELETE CASCADE,
+    produto_id          INTEGER NOT NULL REFERENCES produtos(id),
+    quantidade          INTEGER NOT NULL CHECK (quantidade > 0),
+    valor_unitario      DECIMAL(15, 2) NOT NULL CHECK (valor_unitario >= 0),
+    valor_total         DECIMAL(15, 2) NOT NULL CHECK (valor_total >= 0)
+);
+
+CREATE INDEX idx_itens_transacao ON transacao_itens(id_transacao);
+CREATE INDEX idx_itens_produto ON transacao_itens(produto_id);
+
+COMMENT ON TABLE transacao_itens IS 'Itens da transação (produtos vendidos por pedido)';
 
 
 -- -----------------------------------------------------------------------------

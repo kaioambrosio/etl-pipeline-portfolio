@@ -19,6 +19,12 @@ psycopg2-binary>=2.9.9       # Driver PostgreSQL para Python
 sqlalchemy>=2.0.25           # ORM e abstração de banco de dados
 
 # -----------------------------------------------------------------------------
+# API (FastAPI)
+# -----------------------------------------------------------------------------
+fastapi>=0.111.0             # API web
+uvicorn>=0.30.0              # ASGI server
+
+# -----------------------------------------------------------------------------
 # Validação de Dados e Configuração
 # -----------------------------------------------------------------------------
 pydantic>=2.6.0              # Validação de dados com type hints

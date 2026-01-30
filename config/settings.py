@@ -50,6 +50,18 @@ class Settings(BaseSettings):
         default="data/processed", description="Caminho dos dados processados"
     )
 
+    # -------------------------------------------------------------------------
+    # Configurações da API
+    # -------------------------------------------------------------------------
+    api_cors_origins: str = Field(
+        default="http://localhost:5173",
+        description="Origens permitidas para CORS (separadas por vírgula)",
+    )
+    api_snapshot_limit: int = Field(
+        default=2000,
+        description="Quantidade máxima de registros para snapshot do dashboard",
+    )
+
     @field_validator("etl_log_level")
     @classmethod
     def validate_log_level(cls, v: str) -> str:

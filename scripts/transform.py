@@ -52,10 +52,16 @@ STATUS_MAPPING = {
     "overdue": "ATRASADO",
     "late": "ATRASADO",
     "em atraso": "ATRASADO",
+    # Variações de ERRO
+    "erro": "ERRO",
+    "error": "ERRO",
+    "falha": "ERRO",
+    "failed": "ERRO",
+    "failure": "ERRO",
 }
 
 # Status válidos após normalização
-VALID_STATUS = {"PAGO", "PENDENTE", "CANCELADO", "ATRASADO"}
+VALID_STATUS = {"PAGO", "PENDENTE", "CANCELADO", "ATRASADO", "ERRO"}
 
 
 @dataclass

@@ -28,8 +28,11 @@ from config.settings import get_settings
 from scripts.models import (
     ArquivoProcessado,
     Base,
+    Categoria,
     LogETL,
+    Produto,
     Transacao,
+    TransacaoItem,
     get_engine,
 )
 
@@ -361,9 +364,7 @@ class DataLoader:
             try:
                 # Usar insert com on_conflict_do_nothing
                 stmt = insert(Transacao).values(values)
-                stmt = stmt.on_conflict_do_nothing(
-                    index_elements=["id_transacao", "arquivo_origem"]
-                )
+                stmt = stmt.on_conflict_do_nothing(index_elements=["id_transacao"])
 
                 result = session.execute(stmt)
                 inserted = result.rowcount
@@ -508,6 +509,174 @@ class DataLoader:
                     error_message=str(e),
                     execution_time=execution_time,
                 )
+
+    def load_catalog(self, df: pd.DataFrame) -> Dict[str, int]:
+        """
+        Carrega catálogo de categorias e produtos.
+
+        Espera colunas:
+        - categoria
+        - categoria_descricao (opcional)
+        - produto
+        - descricao
+        - preco_base
+        - preco_min
+        - preco_max
+        - ativo (opcional)
+        """
+        if not self._connected:
+            if not self.connect():
+                return {"categorias": 0, "produtos": 0, "error": 1}
+
+        if not self.ensure_tables_exist():
+            return {"categorias": 0, "produtos": 0, "error": 1}
+
+        df = df.copy()
+        df.columns = df.columns.str.lower().str.strip()
+
+        required = {"categoria", "produto", "descricao", "preco_base", "preco_min", "preco_max"}
+        if not required.issubset(set(df.columns)):
+            missing = sorted(required - set(df.columns))
+            logger.error(f"Catálogo inválido: colunas ausentes {missing}")
+            return {"categorias": 0, "produtos": 0, "error": 1}
+
+        df["categoria_descricao"] = df.get("categoria_descricao", "").fillna("")
+        df["ativo"] = df.get("ativo", True)
+
+        categorias_rows = (
+            df[["categoria", "categoria_descricao"]]
+            .drop_duplicates()
+            .rename(columns={"categoria": "nome", "categoria_descricao": "descricao"})
+            .to_dict("records")
+        )
+
+        produtos_rows = (
+            df[
+                [
+                    "categoria",
+                    "produto",
+                    "descricao",
+                    "preco_base",
+                    "preco_min",
+                    "preco_max",
+                    "ativo",
+                ]
+            ]
+            .rename(columns={"produto": "nome"})
+            .to_dict("records")
+        )
+
+        with self.Session() as session:
+            try:
+                if categorias_rows:
+                    stmt = insert(Categoria).values(categorias_rows)
+                    stmt = stmt.on_conflict_do_nothing(index_elements=["nome"])
+                    session.execute(stmt)
+
+                categorias_db = session.query(Categoria.id, Categoria.nome).all()
+                categoria_map = {c.nome: c.id for c in categorias_db}
+
+                produtos_payload = []
+                for row in produtos_rows:
+                    categoria_id = categoria_map.get(row["categoria"])
+                    if not categoria_id:
+                        continue
+                    produtos_payload.append(
+                        {
+                            "categoria_id": categoria_id,
+                            "nome": row["nome"],
+                            "descricao": row.get("descricao"),
+                            "preco_base": Decimal(str(row.get("preco_base", 0))),
+                            "preco_min": Decimal(str(row.get("preco_min", 0))),
+                            "preco_max": Decimal(str(row.get("preco_max", 0))),
+                            "ativo": bool(row.get("ativo", True)),
+                        }
+                    )
+
+                if produtos_payload:
+                    stmt = insert(Produto).values(produtos_payload)
+                    stmt = stmt.on_conflict_do_nothing(index_elements=["nome"])
+                    session.execute(stmt)
+
+                session.commit()
+                return {
+                    "categorias": len(categorias_rows),
+                    "produtos": len(produtos_payload),
+                    "error": 0,
+                }
+
+            except Exception as e:
+                session.rollback()
+                logger.error(f"Erro ao carregar catálogo: {str(e)}")
+                return {"categorias": 0, "produtos": 0, "error": 1}
+
+    def load_items_from_file(
+        self, file_path: Path, batch_size: int = 100000
+    ) -> Dict[str, int]:
+        """
+        Carrega itens de transações em lote (streaming).
+
+        Espera colunas:
+        - id_transacao
+        - produto
+        - quantidade
+        - valor_unitario
+        - valor_total
+        """
+        if not self._connected:
+            if not self.connect():
+                return {"inserted": 0, "failed": 0, "skipped": 0}
+
+        if not self.ensure_tables_exist():
+            return {"inserted": 0, "failed": 0, "skipped": 0}
+
+        inserted = 0
+        failed = 0
+        skipped = 0
+
+        with self.Session() as session:
+            produtos_db = session.query(Produto.id, Produto.nome).all()
+            produto_map = {p.nome: p.id for p in produtos_db}
+
+        for chunk in pd.read_csv(file_path, chunksize=batch_size):
+            chunk.columns = chunk.columns.str.lower().str.strip()
+            required = {"id_transacao", "produto", "quantidade", "valor_unitario", "valor_total"}
+            if not required.issubset(set(chunk.columns)):
+                missing = sorted(required - set(chunk.columns))
+                logger.error(f"Itens inválido: colunas ausentes {missing}")
+                failed += len(chunk)
+                continue
+
+            values = []
+            for row in chunk.to_dict("records"):
+                produto_id = produto_map.get(str(row.get("produto")).strip())
+                if not produto_id:
+                    skipped += 1
+                    continue
+                values.append(
+                    {
+                        "id_transacao": str(row.get("id_transacao")),
+                        "produto_id": produto_id,
+                        "quantidade": int(row.get("quantidade", 1)),
+                        "valor_unitario": Decimal(str(row.get("valor_unitario", 0))),
+                        "valor_total": Decimal(str(row.get("valor_total", 0))),
+                    }
+                )
+
+            if not values:
+                continue
+
+            with self.Session() as session:
+                try:
+                    session.execute(insert(TransacaoItem).values(values))
+                    session.commit()
+                    inserted += len(values)
+                except Exception as e:
+                    session.rollback()
+                    failed += len(values)
+                    logger.error(f"Erro ao inserir itens: {str(e)}")
+
+        return {"inserted": inserted, "failed": failed, "skipped": skipped}
 
 
 def load(
