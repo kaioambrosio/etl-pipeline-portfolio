@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     # -------------------------------------------------------------------------
     etl_log_level: str = Field(default="INFO", description="Nível de log")
     etl_batch_size: int = Field(default=1000, description="Tamanho do lote para inserção")
+    etl_use_copy: bool = Field(
+        default=False, description="Usar COPY nativo do PostgreSQL para cargas grandes"
+    )
+    etl_copy_threshold: int = Field(
+        default=200000, description="Quantidade minima de registros para ativar COPY"
+    )
     etl_data_raw_path: str = Field(default="data/raw", description="Caminho dos dados brutos")
     etl_data_processed_path: str = Field(
         default="data/processed", description="Caminho dos dados processados"

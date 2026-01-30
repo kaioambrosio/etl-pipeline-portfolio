@@ -8,6 +8,7 @@ Implementa inserção em lote, controle de duplicatas e logging.
 Autor: Kaio Ambrosio
 """
 
+import csv
 import sys
 from dataclasses import dataclass
 from datetime import datetime
@@ -383,6 +384,194 @@ class DataLoader:
 
         return stats
 
+
+    def _copy_from_csv(self, table: str, columns: list[str], file_path: Path) -> None:
+        """
+        Executa COPY FROM STDIN para carregar CSV em tabela.
+
+        Args:
+            table: Nome da tabela de destino.
+            columns: Lista de colunas na ordem do arquivo.
+            file_path: Caminho do CSV.
+        """
+        copy_sql = (
+            f"COPY {table} ({', '.join(columns)}) FROM STDIN "
+            "WITH (FORMAT csv, DELIMITER ',', NULL '')"
+        )
+
+        raw_conn = self.engine.raw_connection()
+        try:
+            with raw_conn.cursor() as cursor:
+                with file_path.open("r", encoding="utf-8") as handle:
+                    cursor.copy_expert(copy_sql, handle)
+            raw_conn.commit()
+        finally:
+            raw_conn.close()
+
+    def load_via_copy(
+        self,
+        df: pd.DataFrame,
+        file_name: str,
+        file_path: str,
+        file_hash: str,
+        file_size: int = 0,
+    ) -> LoadResult:
+        """
+        Carrega dados usando COPY nativo do PostgreSQL.
+        """
+        start_time = datetime.now()
+
+        if not self._connected:
+            if not self.connect():
+                return LoadResult(
+                    success=False,
+                    error_message="Nao foi possivel conectar ao banco de dados",
+                )
+
+        if not self.ensure_tables_exist():
+            return LoadResult(
+                success=False,
+                error_message="Nao foi possivel criar/verificar as tabelas",
+            )
+
+        if self.check_file_processed(file_hash):
+            logger.warning(f"Arquivo ja processado anteriormente: {file_name}")
+            return LoadResult(
+                success=True,
+                records_skipped=len(df),
+                error_message="Arquivo ja processado anteriormente",
+            )
+
+        base_columns = [
+            "id_transacao",
+            "data_transacao",
+            "cliente",
+            "produto",
+            "categoria",
+            "valor",
+            "status_pagamento",
+            "data_pagamento",
+            "ano_transacao",
+            "mes_transacao",
+            "dia_semana",
+            "trimestre",
+            "arquivo_origem",
+        ]
+        copy_columns = base_columns + ["data_processamento"]
+        missing = [col for col in base_columns if col not in df.columns]
+        if missing:
+            return LoadResult(
+                success=False,
+                error_message=f"Colunas ausentes para COPY: {missing}",
+            )
+
+        df_copy = df[base_columns].copy()
+        df_copy["data_processamento"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        df_copy["data_processamento"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        for col in ["data_transacao", "data_pagamento"]:
+            if col in df_copy.columns:
+                df_copy[col] = pd.to_datetime(df_copy[col], errors="coerce")
+                df_copy[col] = df_copy[col].dt.strftime("%Y-%m-%d %H:%M:%S")
+
+        df_copy = df_copy.where(pd.notna(df_copy), "")
+
+        temp_dir = self.settings.processed_data_path
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        temp_path = temp_dir / f"transacoes_copy_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+        df_copy.to_csv(
+            temp_path,
+            index=False,
+            header=False,
+            sep=",",
+            encoding="utf-8",
+            quoting=csv.QUOTE_MINIMAL,
+        )
+
+        with self.Session() as session:
+            log = self.create_log_entry(session, file_name, file_hash)
+            session.commit()
+            log_id = log.id_log
+
+        try:
+            self._copy_from_csv("transacoes", copy_columns, temp_path)
+            inserted = len(df_copy)
+            execution_time = (datetime.now() - start_time).total_seconds()
+
+            with self.Session() as session:
+                log_db = session.get(LogETL, log_id)
+                if not log_db:
+                    raise RuntimeError("Log ETL nao encontrado para atualizacao")
+                self.update_log_entry(
+                    session=session,
+                    log=log_db,
+                    status="SUCESSO",
+                    records_read=len(df_copy),
+                    records_inserted=inserted,
+                    records_rejected=0,
+                    duplicates_ignored=0,
+                    execution_time=execution_time,
+                    details={
+                        "batch_size": self.settings.etl_batch_size,
+                        "use_copy": True,
+                    },
+                )
+                self.register_file_processed(
+                    session=session,
+                    file_name=file_name,
+                    file_path=file_path,
+                    file_hash=file_hash,
+                    file_size=file_size,
+                    log_id=log_id,
+                )
+                session.commit()
+
+            logger.success(
+                f"Carga (COPY) concluida: {inserted} inseridos ({execution_time:.2f}s)"
+            )
+
+            return LoadResult(
+                success=True,
+                records_inserted=inserted,
+                records_skipped=0,
+                records_failed=0,
+                log_id=log.id_log,
+                execution_time=execution_time,
+            )
+        except Exception as e:
+            execution_time = (datetime.now() - start_time).total_seconds()
+            logger.error(f"Erro na carga COPY: {str(e)}")
+
+            with self.Session() as session:
+                log_db = session.get(LogETL, log_id)
+                if not log_db:
+                    raise RuntimeError("Log ETL nao encontrado para atualizacao")
+                self.update_log_entry(
+                    session=session,
+                    log=log_db,
+                    status="ERRO",
+                    records_read=len(df_copy),
+                    records_inserted=0,
+                    records_rejected=len(df_copy),
+                    duplicates_ignored=0,
+                    execution_time=execution_time,
+                    error_message=str(e),
+                )
+                session.commit()
+
+            return LoadResult(
+                success=False,
+                error_message=str(e),
+                execution_time=execution_time,
+            )
+        finally:
+            try:
+                if temp_path.exists():
+                    temp_path.unlink()
+            except Exception:
+                pass
+
     def load(
         self,
         df: pd.DataFrame,
@@ -409,6 +598,16 @@ class DataLoader:
         start_time = datetime.now()
 
         logger.info(f"Iniciando carga de {len(df)} registros de {file_name}")
+        use_copy = self.settings.etl_use_copy and len(df) >= self.settings.etl_copy_threshold
+        if use_copy:
+            logger.info("COPY habilitado para carga de transacoes")
+            return self.load_via_copy(
+                df=df,
+                file_name=file_name,
+                file_path=file_path,
+                file_hash=file_hash,
+                file_size=file_size,
+            )
 
         # Verificar conexão
         if not self._connected:
@@ -610,8 +809,78 @@ class DataLoader:
                 logger.error(f"Erro ao carregar catálogo: {str(e)}")
                 return {"categorias": 0, "produtos": 0, "error": 1}
 
+
+    def load_items_from_file_copy(self, file_path: Path) -> Dict[str, int]:
+        """
+        Carrega itens de transacoes usando COPY para tabela temporaria.
+        """
+        if not self._connected:
+            if not self.connect():
+                return {"inserted": 0, "failed": 0, "skipped": 0}
+
+        if not self.ensure_tables_exist():
+            return {"inserted": 0, "failed": 0, "skipped": 0}
+
+        total = 0
+        inserted = 0
+
+        raw_conn = self.engine.raw_connection()
+        try:
+            with raw_conn.cursor() as cursor:
+                cursor.execute("DROP TABLE IF EXISTS stg_transacao_itens")
+                cursor.execute(
+                    """
+                    CREATE TEMP TABLE stg_transacao_itens (
+                        id_transacao TEXT,
+                        produto TEXT,
+                        quantidade INTEGER,
+                        valor_unitario NUMERIC(15, 2),
+                        valor_total NUMERIC(15, 2)
+                    )
+                    """
+                )
+
+                copy_sql = (
+                    "COPY stg_transacao_itens (id_transacao, produto, quantidade, "
+                    "valor_unitario, valor_total) FROM STDIN "
+                    "WITH (FORMAT csv, HEADER true, DELIMITER ',')"
+                )
+                with file_path.open("r", encoding="utf-8") as handle:
+                    cursor.copy_expert(copy_sql, handle)
+
+                cursor.execute("SELECT COUNT(*) FROM stg_transacao_itens")
+                total = cursor.fetchone()[0]
+
+                cursor.execute(
+                    """
+                    INSERT INTO transacao_itens (
+                        id_transacao, produto_id, quantidade, valor_unitario, valor_total
+                    )
+                    SELECT
+                        s.id_transacao,
+                        p.id,
+                        s.quantidade,
+                        s.valor_unitario,
+                        s.valor_total
+                    FROM stg_transacao_itens s
+                    JOIN produtos p ON p.nome = s.produto
+                    """
+                )
+                inserted = cursor.rowcount
+
+            raw_conn.commit()
+            skipped = max(0, total - inserted)
+            return {"inserted": inserted, "failed": 0, "skipped": skipped}
+
+        except Exception as e:
+            raw_conn.rollback()
+            logger.error(f"Erro ao inserir itens via COPY: {str(e)}")
+            return {"inserted": 0, "failed": total if total else 1, "skipped": 0}
+        finally:
+            raw_conn.close()
+
     def load_items_from_file(
-        self, file_path: Path, batch_size: int = 100000
+        self, file_path: Path, batch_size: int = 100000, use_copy: Optional[bool] = None
     ) -> Dict[str, int]:
         """
         Carrega itens de transações em lote (streaming).
@@ -623,6 +892,11 @@ class DataLoader:
         - valor_unitario
         - valor_total
         """
+        if use_copy is None:
+            use_copy = self.settings.etl_use_copy
+        if use_copy:
+            logger.info("COPY habilitado para carga de itens")
+            return self.load_items_from_file_copy(file_path)
         if not self._connected:
             if not self.connect():
                 return {"inserted": 0, "failed": 0, "skipped": 0}

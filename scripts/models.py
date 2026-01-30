@@ -28,6 +28,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -83,7 +84,10 @@ class Transacao(Base):
     # Metadados
     arquivo_origem: Mapped[str] = mapped_column(String(255), nullable=False)
     data_processamento: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.now
+        DateTime,
+        nullable=False,
+        default=datetime.now,
+        server_default=text("CURRENT_TIMESTAMP"),
     )
 
     # Constraints
