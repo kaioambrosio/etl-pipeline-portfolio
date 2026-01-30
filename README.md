@@ -63,6 +63,31 @@ npm install
 npm run dev
 ```
 
+## Script de start/stop (dev)
+
+Para subir e derrubar API + dashboard rapidamente:
+
+```powershell
+.\scripts\dev_services.ps1 -Action start
+.\scripts\dev_services.ps1 -Action stop
+```
+
+Outras opções:
+```powershell
+.\scripts\dev_services.ps1 -Action status
+.\scripts\dev_services.ps1 -Action restart
+```
+
+Para mudar portas:
+```powershell
+.\scripts\dev_services.ps1 -Action start -ApiPort 8001 -DashPort 3000
+```
+
+Se o PowerShell bloquear execução:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
 ## Variáveis de ambiente
 
 ### ETL/API (`.env`)
