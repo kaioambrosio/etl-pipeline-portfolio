@@ -156,18 +156,47 @@ class DataTransformer:
                 format="mixed",
             )
 
-        # Converter valor para numérico
+        # Converter valor para num?rico
         if "valor" in df.columns:
-            # Tratar valores com formato brasileiro (1.234,56)
-            df["valor"] = (
+            # Suporta formatos brasileiros e internacionais:
+            # - "1.234,56" -> 1234.56
+            # - "1,234.56" -> 1234.56
+            # - "1234.56"  -> 1234.56
+            # - "1234,56"  -> 1234.56
+            valor = (
                 df["valor"]
                 .astype(str)
                 .str.replace("R$", "", regex=False)
                 .str.replace(" ", "", regex=False)
-                .str.replace(".", "", regex=False)
-                .str.replace(",", ".", regex=False)
+                .str.strip()
             )
-            df["valor"] = pd.to_numeric(df["valor"], errors="coerce")
+
+            mask_comma = valor.str.contains(",", na=False)
+            mask_dot = valor.str.contains(".", regex=False, na=False)
+            mask_both = mask_comma & mask_dot
+
+            if mask_both.any():
+                last_comma = valor.str.rfind(",")
+                last_dot = valor.str.rfind(".")
+                mask_comma_decimal = mask_both & (last_comma > last_dot)
+                mask_dot_decimal = mask_both & (last_dot > last_comma)
+
+                valor.loc[mask_comma_decimal] = (
+                    valor.loc[mask_comma_decimal]
+                    .str.replace(".", "", regex=False)
+                    .str.replace(",", ".", regex=False)
+                )
+                valor.loc[mask_dot_decimal] = valor.loc[mask_dot_decimal].str.replace(
+                    ",", "", regex=False
+                )
+
+            mask_only_comma = mask_comma & ~mask_dot
+            if mask_only_comma.any():
+                valor.loc[mask_only_comma] = valor.loc[mask_only_comma].str.replace(
+                    ",", ".", regex=False
+                )
+
+            df["valor"] = pd.to_numeric(valor, errors="coerce")
 
         # Converter id_transacao para string
         if "id_transacao" in df.columns:

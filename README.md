@@ -75,6 +75,6 @@ Se `VITE_USE_MOCK=true`, o dashboard usa o snapshot ou o gerador local.
 
 ## Documentação específica
 
-- ETL detalhado: `README_ETL.md`
-- Dashboard: `dashboard/README.md`
-- Power BI: `docs/powerbi_connection_guide.md`
+- ETL detalhado: [README_ETL.md](README_ETL.md)
+- Dashboard: [dashboard/README.md](dashboard/README.md)
+- Power BI: [docs/powerbi_connection_guide.md](docs/powerbi_connection_guide.md)

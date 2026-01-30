@@ -71,6 +71,11 @@ export function TransacoesTable({
 
   const detalhe = detalheQuery.data?.transacao;
   const itens = detalheQuery.data?.itens ?? [];
+  const totalItens = itens.reduce((acc, item) => {
+    const valor = typeof item.valor_total === "number" ? item.valor_total : 0;
+    return acc + valor;
+  }, 0);
+  const valorTotalDetalhe = totalItens > 0 ? totalItens : detalhe?.valor;
 
   return (
     <div className="dashboard-card">
@@ -195,7 +200,9 @@ export function TransacoesTable({
                                     </div>
                                     <div>
                                       <p className="text-muted-foreground">Valor total</p>
-                                      <p className="font-medium">{formatarMoeda(detalhe.valor)}</p>
+                                      <p className="font-medium">
+                                        {formatarMoeda(valorTotalDetalhe || 0)}
+                                      </p>
                                     </div>
                                     <div>
                                       <p className="text-muted-foreground">Pagamento</p>
